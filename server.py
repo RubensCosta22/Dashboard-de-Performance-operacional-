@@ -86,10 +86,10 @@ def buscar_turno_id(wb, data, periodo):
             return row[0]
     return None
 
-@app.route("/")
+@app.route("/relatorio")
 def index(): return send_from_directory(STATIC_DIR, "relatorio.html")
 
-@app.route("/dashboard")
+@app.route("/")
 def dashboard(): return send_from_directory(STATIC_DIR, "dashboard.html")
 
 @app.route("/api/turno")
