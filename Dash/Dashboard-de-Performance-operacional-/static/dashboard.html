@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Operação Demo — Performance</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f8fafc;--surface:#fff;--surface2:#eef6f7;--surface3:#dbe8ea;
+  --border:#cbd5e1;--border2:#94a3b8;
+  --ink:#0f172a;--ink2:#475569;--ink3:#94a3b8;
+  --accent:#0f766e;--accent-dim:#ccfbf1;
+  --ok:#15803d;--ok-dim:#dcfce7;
+  --warn:#b45309;--warn-dim:#fef3c7;
+  --danger:#be123c;--danger-dim:#ffe4e6;
+  --ferro:#0284c7;--ferro-bg:#e0f2fe;
+  --term:#7c3aed;--term-bg:#ede9fe;
+  --soja:#0f766e;--milho:#ca8a04;--farelo:#92400e;
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.5;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.hdr-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:12px;height:52px}
+.logo-badge{background:var(--accent);color:#fff;font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:4px;letter-spacing:1px}
+.hdr-sep{flex:1}
+.hdr-link{color:var(--ink2);font-size:12px;text-decoration:none;padding:5px 10px;border-radius:var(--r);border:1px solid transparent}
+.hdr-link:hover{background:var(--surface2);border-color:var(--border)}
+.hdr-link.active{color:var(--accent);font-weight:600;background:var(--accent-dim)}
+
+/* FILTROS */
+.filtros{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px}
+.fi-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3)}
+.finput,.fsel{background:var(--surface);border:1px solid var(--border);color:var(--ink);font-family:var(--font);font-size:12px;padding:4px 8px;border-radius:var(--r);outline:none}
+.finput:focus,.fsel:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.finput::-webkit-calendar-picker-indicator{opacity:.5}
+.fbtn{padding:4px 12px;border-radius:var(--r);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);transition:all .15s}
+.fbtn-p{background:var(--accent);color:#fff;border-color:var(--accent)}.fbtn-p:hover{background:#115e59}
+.fbtn-o{background:var(--surface);color:var(--ink2)}.fbtn-o:hover{background:var(--surface2)}
+.fsep{width:1px;height:18px;background:var(--border);margin:0 2px}
+.pbtns{display:flex;gap:4px}
+.pbtn{padding:3px 9px;border-radius:var(--r);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink2);transition:all .15s}
+.pbtn:hover,.pbtn.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+#sf{font-size:10px;color:var(--ink3);font-family:var(--mono);margin-left:4px}
+
+/* LAYOUT */
+.content{max-width:1400px;margin:0 auto;padding:16px 24px 48px;display:flex;flex-direction:column;gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:960px){.g2,.g3{grid-template-columns:1fr}}
+
+/* CARD BASE */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:#fafbfc;gap:8px}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2)}
+.card-body{padding:14px}
+.card-body.np{padding:0}
+
+/* GAUGE — vag/hora */
+.gauge-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.gauge-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:#fafbfc}
+.gauge-hdr-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2)}
+.gauge-body{padding:16px 14px 12px}
+.gauge-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.gauge-item{display:flex;flex-direction:column;gap:6px}
+.gauge-prod-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.gauge-prod-label.graos{color:var(--ok)}
+.gauge-prod-label.farelo{color:var(--farelo)}
+.gauge-val-row{display:flex;align-items:baseline;gap:5px}
+.gauge-val{font-family:var(--mono);font-size:40px;font-weight:600;line-height:1;color:var(--ink)}
+.gauge-val.ok{color:var(--ok)}
+.gauge-val.warn{color:var(--warn)}
+.gauge-val.danger{color:var(--danger)}
+.gauge-unit{font-size:11px;color:var(--ink3)}
+.gauge-meta-row{display:flex;align-items:center;justify-content:space-between}
+.gauge-meta-txt{font-size:10px;color:var(--ink3)}
+.gauge-meta-pct{font-family:var(--mono);font-size:10px;font-weight:600}
+.gauge-meta-pct.ok{color:var(--ok)}.gauge-meta-pct.warn{color:var(--warn)}.gauge-meta-pct.danger{color:var(--danger)}
+.gauge-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:2px;position:relative}
+.gauge-bar-meta{position:absolute;top:0;width:2px;height:100%;background:var(--border2)}
+.gauge-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.spark-wrap{position:relative;height:44px;margin-top:6px}
+
+/* KPIs */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.kpi.accent{border-top:3px solid var(--accent)}
+.kpi.ok{border-top:3px solid var(--ok)}
+.kpi.warn{border-top:3px solid var(--warn)}
+.kpi.danger{border-top:3px solid var(--danger)}
+.kpi.ferro{border-top:3px solid var(--ferro)}
+.kpi.term{border-top:3px solid var(--term)}
+.kl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:5px}
+.kv{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);line-height:1}
+.ks{font-size:9px;color:var(--ink3);margin-top:3px}
+
+/* IMPACTOS */
+.impact-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f0f0f0;transition:background .1s}
+.impact-row:last-child{border-bottom:none}
+.impact-row:hover{background:var(--surface2)}
+.impact-num{font-family:var(--mono);font-size:10px;color:var(--ink3);width:16px;text-align:center}
+.impact-causa{flex:1;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.impact-cat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px}
+.cat-ferro{background:var(--ferro-bg);color:var(--ferro)}
+.cat-term{background:var(--term-bg);color:var(--term)}
+.impact-ocorr{font-family:var(--mono);font-size:10px;color:var(--ink3);min-width:28px;text-align:right}
+.impact-dur{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink2);min-width:38px;text-align:right}
+.impact-bar-wrap{width:70px}
+.bbar-bg{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.bbar-fill{height:100%;border-radius:2px;transition:width .35s}
+
+/* Misc */
+.badge-m1{background:#e3f0ff;color:#0550ae;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--mono)}
+.badge-m2{background:#e6f4ea;color:#1a7f37;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--mono)}
+.loading{text-align:center;padding:32px;color:var(--ink3);font-size:12px}
+.ldot{animation:blink 1.2s infinite}.ldot:nth-child(2){animation-delay:.2s}.ldot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <span class="logo-badge">DEMO</span>
+    <span style="font-size:14px;font-weight:600">Terminal Demo</span>
+    <span style="font-size:11px;color:var(--ink3)">Performance Operacional</span>
+    <div class="hdr-sep"></div>
+    <a href="/" class="hdr-link">📋 Relatório</a>
+    <a href="/dashboard" class="hdr-link active">📊 Dashboard</a>
+  </div>
+</header>
+
+<div class="filtros">
+  <div class="fi-inner">
+    <span class="fl">Período:</span>
+    <div class="pbtns">
+      <button class="pbtn" id="btn-hoje" onclick="setPreset('hoje',this)">Hoje</button>
+      <button class="pbtn" onclick="setPreset('semana',this)">7 dias</button>
+      <button class="pbtn active" id="btn-mes" onclick="setPreset('mes',this)">Mês</button>
+      <button class="pbtn" onclick="setPreset('tudo',this)">Tudo</button>
+    </div>
+    <div class="fsep"></div>
+    <span class="fl">De:</span><input type="date" id="f-ini" class="finput"/>
+    <span class="fl">Até:</span><input type="date" id="f-fim" class="finput"/>
+    <div class="fsep"></div>
+    <span class="fl">Turno:</span>
+    <select id="f-periodo" class="fsel">
+      <option value="">Todos</option>
+      <option value="p0">01–07h</option>
+      <option value="p1">07–13h</option>
+      <option value="p2">13–19h</option>
+      <option value="p3">19–01h</option>
+    </select>
+    <span class="fl">Moega:</span>
+    <select id="f-moega" class="fsel">
+      <option value="">Todas</option>
+      <option value="Moega 1">Moega 1</option>
+      <option value="Moega 2">Moega 2</option>
+    </select>
+    <button class="fbtn fbtn-p" onclick="buscar()">Atualizar</button>
+    <button class="fbtn fbtn-o" onclick="limpar()">Limpar</button>
+    <span id="sf"></span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- VAG/HORA — foco principal -->
+  <div class="g2">
+    <!-- Moega 1 -->
+    <div class="gauge-card">
+      <div class="gauge-hdr">
+        <span class="gauge-hdr-title">⚡ Moega 1 — Vag/hora</span>
+        <span class="badge-m1">M1</span>
+      </div>
+      <div class="gauge-body">
+        <div class="gauge-row">
+          <div class="gauge-item">
+            <div class="gauge-prod-label graos">Grãos</div>
+            <div class="gauge-val-row">
+              <div class="gauge-val" id="vm1g-val">—</div>
+              <div class="gauge-unit">vag/h</div>
+            </div>
+            <div class="gauge-meta-row">
+              <span class="gauge-meta-txt">Meta 8,0</span>
+              <span class="gauge-meta-pct" id="vm1g-pct"></span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-bar-meta" style="left:calc(100%/1.3)"></div>
+              <div class="gauge-bar-fill" id="vm1g-bar"></div>
+            </div>
+            <div class="spark-wrap"><canvas id="sp-m1g"></canvas></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-prod-label farelo">Farelo</div>
+            <div class="gauge-val-row">
+              <div class="gauge-val" id="vm1f-val">—</div>
+              <div class="gauge-unit">vag/h</div>
+            </div>
+            <div class="gauge-meta-row">
+              <span class="gauge-meta-txt">Meta 6,0</span>
+              <span class="gauge-meta-pct" id="vm1f-pct"></span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-bar-fill" id="vm1f-bar"></div>
+            </div>
+            <div class="spark-wrap"><canvas id="sp-m1f"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moega 2 -->
+    <div class="gauge-card">
+      <div class="gauge-hdr">
+        <span class="gauge-hdr-title">⚡ Moega 2 — Vag/hora</span>
+        <span class="badge-m2">M2</span>
+      </div>
+      <div class="gauge-body">
+        <div class="gauge-row">
+          <div class="gauge-item">
+            <div class="gauge-prod-label graos">Grãos</div>
+            <div class="gauge-val-row">
+              <div class="gauge-val" id="vm2g-val">—</div>
+              <div class="gauge-unit">vag/h</div>
+            </div>
+            <div class="gauge-meta-row">
+              <span class="gauge-meta-txt">Meta 8,0</span>
+              <span class="gauge-meta-pct" id="vm2g-pct"></span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-bar-fill" id="vm2g-bar"></div>
+            </div>
+            <div class="spark-wrap"><canvas id="sp-m2g"></canvas></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-prod-label farelo">Farelo</div>
+            <div class="gauge-val-row">
+              <div class="gauge-val" id="vm2f-val">—</div>
+              <div class="gauge-unit">vag/h</div>
+            </div>
+            <div class="gauge-meta-row">
+              <span class="gauge-meta-txt">Meta 6,0</span>
+              <span class="gauge-meta-pct" id="vm2f-pct"></span>
+            </div>
+            <div class="gauge-bar">
+              <div class="gauge-bar-fill" id="vm2f-bar"></div>
+            </div>
+            <div class="spark-wrap"><canvas id="sp-m2f"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TENDÊNCIA VAG/HORA -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">📈 Tendência Vag/hora por dia</span>
+      <div style="display:flex;gap:4px">
+        <button class="pbtn active" id="tg-btn" onclick="switchTrend('graos',this)">Grãos (meta 8)</button>
+        <button class="pbtn" id="tf-btn" onclick="switchTrend('farelo',this)">Farelo (meta 6)</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="position:relative;height:190px"><canvas id="c-trend"></canvas></div>
+    </div>
+  </div>
+
+  <!-- KPIs + IMPACTOS -->
+  <div class="g2">
+
+    <!-- Coluna esquerda: KPIs -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Descarga do período</span></div>
+        <div class="card-body">
+          <div class="kpi-strip" id="kpi-desc">
+            <div class="loading"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Tempo parado</span></div>
+        <div class="card-body">
+          <div class="kpi-strip" id="kpi-par">
+            <div class="loading"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna direita: Impactos -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">🔴 Principais impactos</span>
+        <div style="display:flex;gap:4px">
+          <button class="pbtn active" id="imp-all" onclick="filtImpact('all',this)">Todos</button>
+          <button class="pbtn" id="imp-ferro" onclick="filtImpact('ferro',this)">Ferrovia</button>
+          <button class="pbtn" id="imp-term" onclick="filtImpact('term',this)">Terminal</button>
+        </div>
+      </div>
+      <div class="card-body np" id="impact-list">
+        <div class="loading"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const META_GRAOS  = 8;
+const META_FARELO = 6;
+const CC = { grid:'#e1e4e8', text:'#57606a', ok:'#1a7f37', warn:'#9a6700', danger:'#d1242f',
+             m1:'#0969da', m2:'#1a7f37', graos:'#1a7f37', farelo:'#845a2b' };
+
+let G=null, cTrend=null, spCharts={};
+let trendMode='graos', impactFilter='all';
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+const m2t = m => { if(!m&&m!==0)return'—'; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); };
+const fi  = n => Math.round(n||0).toString();
+const ff  = n => (n||0).toFixed(1).replace('.',',');
+const fd  = d => { if(!d)return'—'; const[,mo,dia]=d.split('-'); return `${dia}/${mo}`; };
+const hoje= ()=> new Date().toISOString().split('T')[0];
+
+function classeVal(val, meta){
+  if(!val || val===0) return '';
+  const r = val/meta;
+  return r>=1 ? 'ok' : r>=0.8 ? 'warn' : 'danger';
+}
+function corBarra(val, meta){
+  if(!val || val===0) return 'var(--border)';
+  const r = val/meta;
+  return r>=1 ? 'var(--ok)' : r>=0.8 ? 'var(--warn)' : 'var(--danger)';
+}
+
+// ── Filtros ───────────────────────────────────────────────────────────────────
+function setPreset(p, btn){
+  document.querySelectorAll('.pbtns .pbtn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const ini=document.getElementById('f-ini'), fim=document.getElementById('f-fim');
+  if(p==='hoje'){ const h=hoje(); ini.value=h; fim.value=h; }
+  else if(p==='semana'){ const d=new Date(); d.setDate(d.getDate()-6); ini.value=d.toISOString().split('T')[0]; fim.value=hoje(); }
+  else if(p==='mes'){ const d=new Date(); d.setDate(1); ini.value=d.toISOString().split('T')[0]; fim.value=hoje(); }
+  else{ ini.value=''; fim.value=''; }
+  buscar();
+}
+
+function limpar(){
+  ['f-ini','f-fim'].forEach(id=>document.getElementById(id).value='');
+  ['f-periodo','f-moega'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.pbtns .pbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-mes').classList.add('active');
+  buscar();
+}
+
+// ── Buscar ────────────────────────────────────────────────────────────────────
+async function buscar(){
+  const ini=document.getElementById('f-ini').value;
+  const fim=document.getElementById('f-fim').value;
+  const per=document.getElementById('f-periodo').value;
+  const moega=document.getElementById('f-moega').value;
+
+  const p=new URLSearchParams();
+  if(ini) p.set('data_ini',ini);
+  if(fim) p.set('data_fim',fim);
+  if(per) p.set('periodo',per);
+  if(moega) p.set('moega',moega);
+
+  try{
+    const d=await(await fetch('/api/dashboard?'+p)).json();
+    G=d;
+    renderAll(d);
+    document.getElementById('sf').textContent=
+      `${d.num_dias||0}d · ${d.num_turnos||0}t${moega?' · '+moega:''}${d._v?' · v'+d._v:''}`;
+  }catch(e){
+    document.getElementById('sf').textContent='⚠ Servidor indisponível';
+  }
+}
+
+function renderAll(d){
+  renderGauges(d);
+  renderSparklines(d);
+  renderTrend(d, trendMode);
+  renderKPIs(d);
+  renderImpacts(d, impactFilter);
+}
+
+// ── GAUGES ────────────────────────────────────────────────────────────────────
+function calcVaghLocal(d){
+  // Calcula vag/hora localmente usando descarga_detalhe + paradas (ferro por intervalo)
+  const det = d.descarga_detalhe||[];
+  const paradas = d.paradas||[];
+
+  // Monta intervalos de ferro por equipamento
+  const ferroIntervals = {m1:[], m2:[]};
+  paradas.forEach(p=>{
+    if(!p.ferro_min) return;
+    (p.ocorr_list||[]).forEach(o=>{
+      const _EQL={'Moega 1':'m1','Moega 2':'m2','m1':'m1','m2':'m2'};
+      const eq = _EQL[o.eq]||o.eq;
+      if(!ferroIntervals[eq]) return;
+      const ini = t2m(o.hora_ini), fim = t2m(o.hora_fim);
+      if(ini===null||fim===null) return;
+      let ff=fim; if(ff<=ini) ff+=1440;
+      ferroIntervals[eq].push([ini,ff]);
+    });
+  });
+
+  function t2m(s){ if(!s) return null; const[h,m]=s.split(':').map(Number); return h*60+m; }
+  function ferroNoIntervalo(eq, ini, fim){
+    let pf=fim; if(pf<=ini) pf+=1440;
+    let total=0;
+    (ferroIntervals[eq]||[]).forEach(([fi,ff])=>{
+      const ov=Math.min(ff,pf)-Math.max(fi,ini);
+      if(ov>0) total+=ov;
+      if(pf>1440){const ov2=Math.min(ff+1440,pf)-Math.max(fi+1440,ini);if(ov2>0)total+=ov2;}
+    });
+    return total;
+  }
+
+  const acc = {m1:{qg:0,qf:0,tg:0,tf:0}, m2:{qg:0,qf:0,tg:0,tf:0}};
+  const GRAOS = new Set(['Soja','Milho']);
+
+  det.forEach(item=>{
+    const eq=item.eq, prod=item.prod, qtd=item.qtd||0;
+    if(!acc[eq]||qtd<=0) return;
+    (item.intervalos||[]).forEach(({ini:iniS, fim:fimS})=>{
+      const ini=t2m(iniS), fim=t2m(fimS);
+      if(ini===null||fim===null||ini===fim) return;
+      let dur=fim-ini; if(dur<0) dur+=1440;
+      const liq=dur-ferroNoIntervalo(eq,ini,fim);
+      if(liq<=0) return;
+      if(GRAOS.has(prod)){ acc[eq].qg+=qtd; acc[eq].tg+=liq; }
+      else                { acc[eq].qf+=qtd; acc[eq].tf+=liq; }
+    });
+  });
+
+  function taxa(q,t){ return(q>0&&t>0)?Math.round(q/(t/60)*10)/10:0; }
+  return {
+    m1:{ graos:taxa(acc.m1.qg, acc.m1.tg), farelo:taxa(acc.m1.qf, acc.m1.tf) },
+    m2:{ graos:taxa(acc.m2.qg, acc.m2.tg), farelo:taxa(acc.m2.qf, acc.m2.tf) },
+  };
+}
+
+function renderGauges(d){
+  const vSrv = d.vagh||{};
+  const semDados = !vSrv.m1?.graos && !vSrv.m1?.farelo && !vSrv.m2?.graos && !vSrv.m2?.farelo;
+  const v = semDados ? calcVaghLocal(d) : vSrv;
+  [
+    {valId:'vm1g', pctId:'vm1g-pct', barId:'vm1g-bar', val:v.m1?.graos||0,  meta:META_GRAOS},
+    {valId:'vm1f', pctId:'vm1f-pct', barId:'vm1f-bar', val:v.m1?.farelo||0, meta:META_FARELO},
+    {valId:'vm2g', pctId:'vm2g-pct', barId:'vm2g-bar', val:v.m2?.graos||0,  meta:META_GRAOS},
+    {valId:'vm2f', pctId:'vm2f-pct', barId:'vm2f-bar', val:v.m2?.farelo||0, meta:META_FARELO},
+  ].forEach(({valId,pctId,barId,val,meta})=>{
+    const elV = document.getElementById(valId + '-val');
+    const elP = document.getElementById(pctId);
+    const elB = document.getElementById(barId);
+    if(!elV) return;
+
+    if(val>0){
+      elV.textContent = ff(val);
+      elV.className   = 'gauge-val ' + classeVal(val, meta);
+      const pct = Math.round(val/meta*100);
+      if(elP){ elP.textContent = pct+'%'; elP.className = 'gauge-meta-pct ' + classeVal(val,meta); }
+      if(elB){ elB.style.width = Math.min(pct,130)+'%'; elB.style.background = corBarra(val,meta); }
+    } else {
+      elV.textContent = '—'; elV.className = 'gauge-val';
+      if(elP){ elP.textContent=''; }
+      if(elB){ elB.style.width='0'; }
+    }
+  });
+}
+
+// ── SPARKLINES ────────────────────────────────────────────────────────────────
+function renderSparklines(d){
+  const dias = d.por_dia||[];
+  const sets = [
+    {id:'sp-m1g', key:'vagh_m1_graos',  meta:META_GRAOS,  cor:CC.ok},
+    {id:'sp-m1f', key:'vagh_m1_farelo', meta:META_FARELO, cor:CC.farelo},
+    {id:'sp-m2g', key:'vagh_m2_graos',  meta:META_GRAOS,  cor:CC.ok},
+    {id:'sp-m2f', key:'vagh_m2_farelo', meta:META_FARELO, cor:CC.farelo},
+  ];
+  sets.forEach(({id, key, meta, cor})=>{
+    if(spCharts[id]) spCharts[id].destroy();
+    const ctx = document.getElementById(id);
+    if(!ctx) return;
+    const data = dias.map(x=>x[key]||0);
+    spCharts[id] = new Chart(ctx,{
+      type:'line',
+      data:{
+        labels: dias.map((_,i)=>i),
+        datasets:[
+          { data, borderColor:cor, borderWidth:1.5, pointRadius:0, tension:.3, fill:false },
+          { data:dias.map(()=>meta), borderColor:'#d0d7de', borderWidth:1,
+            borderDash:[3,3], pointRadius:0, fill:false },
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{display:false},y:{display:false,min:0}},
+        animation:{duration:300} }
+    });
+  });
+}
+
+// ── TENDÊNCIA ─────────────────────────────────────────────────────────────────
+function switchTrend(mode, btn){
+  trendMode=mode;
+  document.querySelectorAll('#tg-btn,#tf-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(G) renderTrend(G, mode);
+}
+
+function renderTrend(d, mode){
+  if(cTrend){ cTrend.destroy(); cTrend=null; }
+  const dias = d.por_dia||[];
+  if(!dias.length) return;
+  const meta = mode==='graos' ? META_GRAOS : META_FARELO;
+  const k1   = mode==='graos' ? 'vagh_m1_graos' : 'vagh_m1_farelo';
+  const k2   = mode==='graos' ? 'vagh_m2_graos' : 'vagh_m2_farelo';
+
+  cTrend = new Chart(document.getElementById('c-trend').getContext('2d'),{
+    type:'line',
+    data:{
+      labels: dias.map(x=>fd(x.data)),
+      datasets:[
+        { label:'Moega 1', data:dias.map(x=>x[k1]||null), borderColor:CC.m1,
+          backgroundColor:'rgba(9,105,218,.07)', tension:.3, fill:true,
+          pointRadius:2, pointHoverRadius:4, borderWidth:2 },
+        { label:'Moega 2', data:dias.map(x=>x[k2]||null), borderColor:CC.m2,
+          backgroundColor:'rgba(26,127,55,.06)', tension:.3, fill:true,
+          pointRadius:2, pointHoverRadius:4, borderWidth:2 },
+        { label:`Meta ${meta}`, data:dias.map(()=>meta), borderColor:'#afb8c1',
+          borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{ position:'top', labels:{color:CC.text, font:{size:10}, boxWidth:10, padding:12} },
+        tooltip:{
+          callbacks:{ label: ctx => ctx.raw!=null ? `${ctx.dataset.label}: ${ff(ctx.raw)} vag/h` : '' }
+        }
+      },
+      scales:{
+        x:{ grid:{color:'#e1e4e8'}, ticks:{color:CC.text, font:{size:9}, maxRotation:0} },
+        y:{ grid:{color:'#e1e4e8'}, ticks:{color:CC.text, font:{size:9}}, min:0,
+            title:{display:true, text:'vag/h', color:CC.text, font:{size:9}} }
+      }
+    }
+  });
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKPIs(d){
+  const k    = d.kpis||{};
+  const desc = d.descarga||{};
+  const totGeral = Math.round(k.total_geral||0);
+  const totSoja  = Math.round((desc.Soja?.m1||0)+(desc.Soja?.m2||0));
+  const totMilho = Math.round((desc.Milho?.m1||0)+(desc.Milho?.m2||0));
+  const totFar   = Math.round((desc.Farelo?.m1||0)+(desc.Farelo?.m2||0));
+
+  document.getElementById('kpi-desc').innerHTML = [
+    kpiEl('Total', totGeral, `${d.num_dias||0} dias`, 'accent'),
+    kpiEl('Soja',   totSoja,  '', 'ok'),
+    kpiEl('Milho',  totMilho, '', 'warn'),
+    kpiEl('Farelo', totFar,   '', ''),
+  ].join('');
+
+  const totPar = (k.ferro_min||0)+(k.term_min||0);
+  document.getElementById('kpi-par').innerHTML = [
+    kpiEl('Total',    m2t(totPar),      '', 'danger'),
+    kpiEl('Ferrovia', m2t(k.ferro_min||0), '', 'ferro'),
+    kpiEl('Terminal', m2t(k.term_min||0),  '', 'term'),
+  ].join('');
+}
+
+function kpiEl(l,v,s,c){
+  return `<div class="kpi ${c}">
+    <div class="kl">${l}</div>
+    <div class="kv">${v}</div>
+    ${s?`<div class="ks">${s}</div>`:''}
+  </div>`;
+}
+
+// ── IMPACTOS ──────────────────────────────────────────────────────────────────
+function filtImpact(f, btn){
+  impactFilter=f;
+  ['imp-all','imp-ferro','imp-term'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  btn.classList.add('active');
+  if(G) renderImpacts(G, f);
+}
+
+function renderImpacts(d, filtro){
+  const list = document.getElementById('impact-list');
+  const paradas = (d.paradas||[]).filter(p=>
+    filtro==='ferro' ? p.ferro_min>0 : filtro==='term' ? p.term_min>0 : true
+  ).slice(0,20);
+
+  if(!paradas.length){
+    list.innerHTML='<div class="loading">Sem dados</div>'; return;
+  }
+
+  const maxMin = paradas[0].total_min||1;
+  list.innerHTML = paradas.map((p,i)=>{
+    const isFerro = p.ferro_min > p.term_min;
+    const pct     = Math.round(p.total_min/maxMin*100);
+    const cor     = isFerro ? 'var(--ferro)' : 'var(--term)';
+    return `<div class="impact-row">
+      <div class="impact-num">${i+1}</div>
+      <div class="impact-causa" title="${p.causa}">${p.causa}</div>
+      <div class="impact-cat cat-${isFerro?'ferro':'term'}">${isFerro?'FER':'TER'}</div>
+      <div class="impact-ocorr">${p.ocorrencias}x</div>
+      <div class="impact-dur">${m2t(p.total_min)}</div>
+      <div class="impact-bar-wrap">
+        <div class="bbar-bg">
+          <div class="bbar-fill" style="width:${pct}%;background:${cor}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setPreset('mes', document.getElementById('btn-mes'));
+</script>
+</body>
+</html>
