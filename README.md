@@ -1,6 +1,6 @@
 # Sistema de Descarga Operacional — Dashboard de Performance
 
-![Dashboard](dashboard.png)
+![Dashboard](Dashboard.png)
 
 ## 📋 Sobre o Projeto
 
@@ -44,7 +44,7 @@ O painel apresenta indicadores operacionais consolidados e atualizados em tempo 
 * Principais impactos operacionais
 * Indicadores ferroviários e terminais
 
-![Dashboard Operacional](dashboard.png)
+![Dashboard Operacional](Dashboard.png)
 
 ---
 
